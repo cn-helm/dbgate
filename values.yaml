@@ -1,0 +1,50 @@
+replicaCount: 1
+
+image:
+  repository: public.ecr.aws/cnoo/dbgate
+  tag: "6.5.4"
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+podAnnotations: {}
+podLabels: {}
+
+service:
+  type: ClusterIP
+  port: 3000
+  annotations: {}
+
+ingress:
+  enabled: false
+  className: nginx
+  annotations: {}
+  hosts:
+    - host: dbgate.localhost
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+auth:
+  # Required unless existingSecret is set. Do not commit a real password here.
+  adminPassword: ""
+  adminPermissions: "*"
+  # Existing Secret must contain LOGIN_PASSWORD_admin and LOGIN_PERMISSIONS_admin.
+  existingSecret: ""
+
+persistence:
+  enabled: false
+  accessModes:
+    - ReadWriteOnce
+  size: 1Gi
+  storageClass: ""
+  annotations: {}
+
+resources: {}
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
