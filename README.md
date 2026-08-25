@@ -12,9 +12,7 @@ Provide the administrator password at install time; do not commit it to
 ```bash
 helm upgrade --install dbgate . \
   --namespace tools --create-namespace \
-  --set auth.adminPassword='replace-with-a-strong-password' \
-  --set ingress.enabled=true \
-  --set-string 'ingress.hosts[0].host=dbgate.localhost'
+  --set auth.adminPassword='replace-with-a-strong-password'
 ```
 
 For an existing Secret, set `auth.existingSecret`. It must contain both
@@ -24,8 +22,21 @@ For an existing Secret, set `auth.existingSecret`. It must contain both
 
 Package and publish this directory to an HTTPS or Git-backed Helm repository,
 then add that repository in **Apps > Repositories** and install the `dbgate`
-chart from **Apps > Charts**. Enter `auth.adminPassword` in the Rancher values
-form. Enable the Ingress only after an `nginx` IngressClass/controller is ready.
+ chart from **Apps > Charts**. Enter `auth.adminPassword` in the Rancher values
+ form.
+
+## Rancher Service Proxy
+
+The Service follows the same structure as LibreDB Studio: it exposes HTTP port
+`80` and forwards it to DbGate's container port `3000`. With a `dbgate` release
+in the `tools` namespace, Rancher exposes:
+
+```text
+https://localhost/api/v1/namespaces/tools/services/http:dbgate:80/proxy/
+```
+
+Keep `ingress.enabled=false` when using this access method. To use an Ingress
+instead, enable the Ingress and configure its host.
 
 ## Persistence
 

@@ -3,7 +3,6 @@
 {{- if .Values.ingress.enabled }}
 Open: http{{ if .Values.ingress.tls }}s{{ end }}://{{ (first .Values.ingress.hosts).host }}
 {{- else }}
-To access it locally:
-  kubectl -n {{ .Release.Namespace }} port-forward service/{{ include "dbgate.fullname" . }} 3000:{{ .Values.service.port }}
-Then open http://127.0.0.1:3000
+Open through Rancher's authenticated Kubernetes Service Proxy:
+  https://localhost/api/v1/namespaces/{{ .Release.Namespace }}/services/http:{{ include "dbgate.fullname" . }}:{{ .Values.service.port }}/proxy/
 {{- end }}

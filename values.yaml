@@ -14,7 +14,9 @@ podLabels: {}
 
 service:
   type: ClusterIP
-  port: 3000
+  # Match Rancher's HTTP Service Proxy convention: Service port 80 -> DbGate 3000.
+  port: 80
+  targetPort: 3000
   annotations: {}
 
 ingress:
