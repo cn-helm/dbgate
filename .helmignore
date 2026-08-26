@@ -1,0 +1,5 @@
+.git/
+.github/
+.helm-repository/
+*.tgz
+index.yaml

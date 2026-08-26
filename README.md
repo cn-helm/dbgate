@@ -18,12 +18,22 @@ helm upgrade --install dbgate . \
 For an existing Secret, set `auth.existingSecret`. It must contain both
 `LOGIN_PASSWORD_admin` and `LOGIN_PERMISSIONS_admin` keys.
 
-## Rancher
+## Publish as a Rancher HTTP Repository
 
-Package and publish this directory to an HTTPS or Git-backed Helm repository,
-then add that repository in **Apps > Repositories** and install the `dbgate`
- chart from **Apps > Charts**. Enter `auth.adminPassword` in the Rancher values
- form.
+Pushing this Chart to the `main` branch runs the GitHub Actions workflow that
+packages it, generates `index.yaml`, and publishes both to `gh-pages`. In the
+GitHub repository settings, enable **Pages** and select the `gh-pages` branch
+as its source. After the first successful workflow, add this URL in Rancher
+under **Apps > Repositories** with type **HTTP**:
+
+```text
+https://cn00.github.io/dbgate-helm
+```
+
+Do not append `Chart.yaml` or `index.yaml`: Rancher resolves `index.yaml` from
+the repository root. It will then show the `dbgate` Chart in **Apps > Charts**.
+Enter `auth.adminPassword` in the Rancher values form. Bump `Chart.yaml`'s
+`version` for every Chart release so Helm and Rancher detect the update.
 
 ## Rancher Service Proxy
 
@@ -35,14 +45,14 @@ in the `tools` namespace, Rancher exposes:
 https://localhost/api/v1/namespaces/tools/services/http:dbgate:80/proxy/
 ```
 
-Keep `ingress.enabled=false` when using this access method. To use an Ingress
-instead, enable the Ingress and configure its host.
+DbGate login uses bearer authentication after the initial request, which does
+not work reliably through Rancher's authenticated Service Proxy. Use the
+default Ingress endpoint below instead.
 
 ## Rancher HTTPS subpath
 
 After Rancher is moved to host port `8443` and ingress-nginx owns host port
-`443`, use the supplied values preset to serve DbGate from the shared HTTPS
-endpoint:
+`443`, the default Chart values serve DbGate from the shared HTTPS endpoint:
 
 ```bash
 helm upgrade --install dbgate . \
