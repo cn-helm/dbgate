@@ -1,0 +1,20 @@
+apiVersion: v1
+entries:
+  dbgate:
+  - apiVersion: v2
+    appVersion: 6.5.4
+    created: "2026-08-26T02:20:26.440676825Z"
+    description: DbGate database manager for Kubernetes and Rancher
+    digest: 11e6271ef4888b4d08dcac0b9c12b85b87fdcdb978206e007786e28b0a8c6f41
+    keywords:
+    - database
+    - dbgate
+    - admin
+    maintainers:
+    - name: local
+    name: dbgate
+    type: application
+    urls:
+    - https://cn00.github.io/dbgate-helm/dbgate-0.1.1.tgz
+    version: 0.1.1
+generated: "2026-08-26T02:20:26.440163136Z"
