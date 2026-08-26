@@ -32,6 +32,11 @@ spec:
           envFrom:
             - secretRef:
                 name: {{ include "dbgate.authSecretName" . }}
+          {{- with .Values.web.root }}
+          env:
+            - name: WEB_ROOT
+              value: {{ . | quote }}
+          {{- end }}
           ports:
             - name: http
               containerPort: 3000

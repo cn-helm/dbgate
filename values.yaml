@@ -20,15 +20,20 @@ service:
   annotations: {}
 
 ingress:
-  enabled: false
+  # Default Rancher ingress: https://<rancher-host-or-lan-ip>/dbgate/.
+  enabled: true
   className: nginx
   annotations: {}
   hosts:
-    - host: dbgate.localhost
-      paths:
-        - path: /
+    # Omit host to match localhost, a LAN IP, or any DNS name.
+    - paths:
+        - path: /dbgate
           pathType: Prefix
   tls: []
+
+web:
+  # DbGate is served below the default Ingress path prefix.
+  root: "/dbgate"
 
 auth:
   # Required unless existingSecret is set. Do not commit a real password here.

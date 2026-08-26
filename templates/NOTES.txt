@@ -1,7 +1,9 @@
 1. DbGate has been installed.
 
 {{- if .Values.ingress.enabled }}
-Open: http{{ if .Values.ingress.tls }}s{{ end }}://{{ (first .Values.ingress.hosts).host }}
+{{- $host := default "<rancher-host-or-lan-ip>" (first .Values.ingress.hosts).host }}
+{{- $path := default "/" (first (first .Values.ingress.hosts).paths).path }}
+Open: http{{ if .Values.ingress.tls }}s{{ end }}://{{ $host }}{{ $path }}
 {{- else }}
 Open through Rancher's authenticated Kubernetes Service Proxy:
   https://localhost/api/v1/namespaces/{{ .Release.Namespace }}/services/http:{{ include "dbgate.fullname" . }}:{{ .Values.service.port }}/proxy/

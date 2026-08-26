@@ -38,6 +38,25 @@ https://localhost/api/v1/namespaces/tools/services/http:dbgate:80/proxy/
 Keep `ingress.enabled=false` when using this access method. To use an Ingress
 instead, enable the Ingress and configure its host.
 
+## Rancher HTTPS subpath
+
+After Rancher is moved to host port `8443` and ingress-nginx owns host port
+`443`, use the supplied values preset to serve DbGate from the shared HTTPS
+endpoint:
+
+```bash
+helm upgrade --install dbgate . \
+  --namespace tools --create-namespace \
+  --set auth.adminPassword='replace-with-a-strong-password'
+```
+
+Open `https://<rancher-host-or-lan-ip>/dbgate/` (including the trailing slash).
+The default values intentionally omit `spec.rules[].host`, so the Ingress accepts
+`localhost`, a LAN IP, or a DNS name. It sets `WEB_ROOT=/dbgate`, so DbGate
+keeps its resources and login requests below the Ingress prefix. Configure a
+trusted TLS certificate for the hostname or IP you use to remove the browser
+certificate warning.
+
 ## Persistence
 
 Set `persistence.enabled=true` to retain DbGate's local data under

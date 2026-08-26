@@ -20,7 +20,9 @@ spec:
   rules:
     {{- range .Values.ingress.hosts }}
     {{- $paths := .paths | default (list (dict "path" "/" "pathType" "Prefix")) }}
-    - host: {{ .host | quote }}
+    - {{- with .host }}
+      host: {{ . | quote }}
+      {{- end }}
       http:
         paths:
           {{- range $paths }}
