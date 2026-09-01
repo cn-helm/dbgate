@@ -43,7 +43,7 @@ auth:
   existingSecret: ""
 
 persistence:
-  enabled: false
+  enabled: true
   accessModes:
     - ReadWriteOnce
   size: 1Gi
