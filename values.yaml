@@ -1,8 +1,8 @@
 replicaCount: 1
 
 image:
-  repository: public.ecr.aws/cnoo/dbgate
-  tag: "6.5.4"
+  repository: cn00/dbgate
+  tag: "latest"
   pullPolicy: IfNotPresent
 
 imagePullSecrets: []
@@ -36,11 +36,40 @@ web:
   root: "/dbgate"
 
 auth:
+  # logins, oauth or ad. OAuth/AD settings must be supplied by existingSecret.
+  provider: logins
   # Required unless existingSecret is set. Do not commit a real password here.
   adminPassword: ""
   adminPermissions: "*"
   # Existing Secret must contain LOGIN_PASSWORD_admin and LOGIN_PERMISSIONS_admin.
   existingSecret: ""
+
+rbac:
+  # env preserves LOGIN_PERMISSIONS_*; postgres/mysql/sqlite enable dynamic RBAC.
+  # Requires an application image containing the RBAC storage implementation.
+  engine: env
+  # PG/MySQL: Secret containing RBAC_STORAGE_PASSWORD and RBAC_TOKEN_SECRET.
+  # SQLite: optional Secret containing RBAC_TOKEN_SECRET (at least 32 characters).
+  # Secrets must exist in the release namespace. No credentials are stored here.
+  existingSecret: ""
+  bootstrap:
+    # First initialization only; defaults to auth.provider when empty.
+    provider: ""
+    # Must be a real identity of the configured authentication provider.
+    # Set to empty after initialization to omit both bootstrap variables.
+    login: admin
+  database:
+    server: ""
+    # 0 selects 5432 for postgres or 3306 for mysql.
+    port: 0
+    name: dbgate_rbac
+    user: dbgate_rbac
+    # true enables TLS with certificate verification.
+    ssl: false
+  sqlite:
+    # Must be a file directly under the existing data volume mount.
+    # Requires persistence.enabled=true and replicaCount=1; upgrades use Recreate.
+    file: /root/.dbgate/rbac.sqlite
 
 persistence:
   enabled: true

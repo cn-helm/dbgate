@@ -2,8 +2,8 @@ apiVersion: v2
 name: dbgate
 description: DbGate database manager for Kubernetes and Rancher
 type: application
-version: 0.1.1
-appVersion: "6.5.4"
+version: 0.1.2
+appVersion: "v7.2.6"
 keywords:
   - database
   - dbgate

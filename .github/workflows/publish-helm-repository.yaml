@@ -7,6 +7,8 @@ on:
     paths:
       - Chart.yaml
       - values.yaml
+      - values.schema.json
+      - tests/**
       - templates/**
       - .helmignore
       - .github/workflows/publish-helm-repository.yaml
@@ -36,6 +38,13 @@ jobs:
 
       - name: Set up Helm
         uses: azure/setup-helm@v4
+
+      - name: Validate chart and RBAC templates
+        shell: bash
+        run: |
+          set -euo pipefail
+          helm lint . --strict --set auth.existingSecret=lint-auth
+          node --test tests/rbac.test.cjs
 
       - name: Package chart and update index
         shell: bash

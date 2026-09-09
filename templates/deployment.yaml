@@ -1,3 +1,4 @@
+{{- include "dbgate.validateRbac" . -}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -6,6 +7,10 @@ metadata:
     {{- include "dbgate.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.replicaCount }}
+  {{- if eq .Values.rbac.engine "sqlite" }}
+  strategy:
+    type: Recreate
+  {{- end }}
   selector:
     matchLabels:
       {{- include "dbgate.selectorLabels" . | nindent 6 }}
@@ -32,11 +37,50 @@ spec:
           envFrom:
             - secretRef:
                 name: {{ include "dbgate.authSecretName" . }}
-          {{- with .Values.web.root }}
           env:
+            - name: AUTH_PROVIDER
+              value: {{ .Values.auth.provider | quote }}
+            - name: RBAC_STORAGE_ENGINE
+              value: {{ .Values.rbac.engine | quote }}
+            {{- with .Values.web.root }}
             - name: WEB_ROOT
               value: {{ . | quote }}
-          {{- end }}
+            {{- end }}
+            {{- if ne .Values.rbac.engine "env" }}
+            {{- if .Values.rbac.bootstrap.login }}
+            - name: RBAC_BOOTSTRAP_PROVIDER
+              value: {{ default .Values.auth.provider .Values.rbac.bootstrap.provider | quote }}
+            - name: RBAC_BOOTSTRAP_LOGIN
+              value: {{ .Values.rbac.bootstrap.login | quote }}
+            {{- end }}
+            {{- if .Values.rbac.existingSecret }}
+            - name: RBAC_TOKEN_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.rbac.existingSecret | quote }}
+                  key: RBAC_TOKEN_SECRET
+            {{- end }}
+            {{- if eq .Values.rbac.engine "sqlite" }}
+            - name: RBAC_STORAGE_FILE
+              value: {{ .Values.rbac.sqlite.file | quote }}
+            {{- else }}
+            - name: RBAC_STORAGE_SERVER
+              value: {{ .Values.rbac.database.server | quote }}
+            - name: RBAC_STORAGE_PORT
+              value: {{ default (ternary 5432 3306 (eq .Values.rbac.engine "postgres")) .Values.rbac.database.port | quote }}
+            - name: RBAC_STORAGE_DATABASE
+              value: {{ .Values.rbac.database.name | quote }}
+            - name: RBAC_STORAGE_USER
+              value: {{ .Values.rbac.database.user | quote }}
+            - name: RBAC_STORAGE_SSL
+              value: {{ .Values.rbac.database.ssl | quote }}
+            - name: RBAC_STORAGE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.rbac.existingSecret | quote }}
+                  key: RBAC_STORAGE_PASSWORD
+            {{- end }}
+            {{- end }}
           ports:
             - name: http
               containerPort: 3000

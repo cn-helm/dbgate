@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "replicaCount": { "type": "integer", "minimum": 0 },
+    "auth": {
+      "type": "object",
+      "properties": {
+        "provider": { "type": "string", "enum": ["logins", "oauth", "ad"] },
+        "existingSecret": { "type": "string" }
+      }
+    },
+    "rbac": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "engine": { "type": "string", "enum": ["env", "postgres", "mysql", "sqlite"] },
+        "existingSecret": { "type": "string" },
+        "bootstrap": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "provider": { "type": "string", "enum": ["", "logins", "oauth", "ad"] },
+            "login": { "type": "string" }
+          }
+        },
+        "database": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "server": { "type": "string" },
+            "port": { "type": "integer", "minimum": 0, "maximum": 65535 },
+            "name": { "type": "string" },
+            "user": { "type": "string" },
+            "ssl": { "type": "boolean" }
+          }
+        },
+        "sqlite": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": { "file": { "type": "string" } }
+        }
+      }
+    },
+    "persistence": {
+      "type": "object",
+      "properties": { "enabled": { "type": "boolean" } }
+    }
+  }
+}

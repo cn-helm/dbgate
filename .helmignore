@@ -3,3 +3,5 @@
 .helm-repository/
 *.tgz
 index.yaml
+values2.yaml
+tests/
