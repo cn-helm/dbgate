@@ -1,5 +1,7 @@
 # DbGate Helm Chart
 
+[简体中文](readme.zh.md)
+
 This chart deploys DbGate as a single-replica Kubernetes workload. It is suitable
 for installation from Rancher Apps after the chart directory is published to a
 Helm repository, or directly with Helm.
@@ -9,10 +11,39 @@ Helm repository, or directly with Helm.
 Provide the administrator password at install time; do not commit it to
 `values.yaml`.
 
+### Online installation
+
+Add the public Helm repository and install the chart:
+
+```bash
+helm repo add dbgate https://cn-helm.github.io/dbgate
+helm repo update
+helm upgrade --install dbgate dbgate/dbgate \
+  --namespace tools --create-namespace \
+  --set auth.adminPassword='replace-with-a-strong-password'
+```
+
+### Local installation
+
+Run from the chart directory:
+
 ```bash
 helm upgrade --install dbgate . \
   --namespace tools --create-namespace \
   --set auth.adminPassword='replace-with-a-strong-password'
+```
+
+To use a local kubeconfig and a specific Ingress hostname, add these options
+to the local installation command (adjust the kubeconfig path):
+
+```bash
+helm --kubeconfig ./rancher-local.yaml upgrade --install dbgate . \
+  --namespace tools --create-namespace \
+  --set auth.adminPassword='replace-with-a-strong-password' \
+  --set ingress.enabled=true \
+  --set 'ingress.hosts[0].host=dbgate.localhost' \
+  --set 'ingress.hosts[0].paths[0].path=/dbgate' \
+  --set 'ingress.hosts[0].paths[0].pathType=Prefix'
 ```
 
 For an existing Secret, set `auth.existingSecret`. It must contain both
@@ -27,13 +58,21 @@ as its source. After the first successful workflow, add this URL in Rancher
 under **Apps > Repositories** with type **HTTP**:
 
 ```text
-https://cn00.github.io/dbgate-helm
+https://cn-helm.github.io/dbgate
 ```
 
 Do not append `Chart.yaml` or `index.yaml`: Rancher resolves `index.yaml` from
 the repository root. It will then show the `dbgate` Chart in **Apps > Charts**.
 Enter `auth.adminPassword` in the Rancher values form. Bump `Chart.yaml`'s
 `version` for every Chart release so Helm and Rancher detect the update.
+
+The workflow also renders this README as the English homepage and
+`readme.zh.md` as the Chinese page, with language navigation. Documentation
+changes trigger publication too. The site retains `index.yaml` and existing
+chart archives, so the same URL serves both documentation and Helm clients.
+
+- English: https://cn-helm.github.io/dbgate/
+- 简体中文: https://cn-helm.github.io/dbgate/readme.zh.html
 
 ## Rancher Service Proxy
 
