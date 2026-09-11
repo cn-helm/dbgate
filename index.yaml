@@ -3,9 +3,9 @@ entries:
   dbgate:
   - apiVersion: v2
     appVersion: v7.2.6
-    created: "2026-09-09T05:17:53.925427979Z"
+    created: "2026-09-11T07:34:50.530184161Z"
     description: DbGate database manager for Kubernetes and Rancher
-    digest: 9aa8c60b064bcac29a808aa85f1af5400f2b56fe9e28333642af3b20e52488d9
+    digest: b106094d3131917ac998888d0732f3ebc48976dcaecc6aab2f21484f211f32d3
     keywords:
     - database
     - dbgate
@@ -15,11 +15,11 @@ entries:
     name: dbgate
     type: application
     urls:
-    - https://cn00.github.io/dbgate-helm/dbgate-0.1.2.tgz
+    - https://cn-helm.github.io/dbgate/dbgate-0.1.2.tgz
     version: 0.1.2
   - apiVersion: v2
     appVersion: 6.5.4
-    created: "2026-09-09T05:17:53.9248968Z"
+    created: "2026-09-11T07:34:50.529517967Z"
     description: DbGate database manager for Kubernetes and Rancher
     digest: 3850b23ceb51d82a9c6c1f923679d3e851da23fcee3b534cd629420b2b1fc733
     keywords:
@@ -31,6 +31,6 @@ entries:
     name: dbgate
     type: application
     urls:
-    - https://cn00.github.io/dbgate-helm/dbgate-0.1.1.tgz
+    - https://cn-helm.github.io/dbgate/dbgate-0.1.1.tgz
     version: 0.1.1
-generated: "2026-09-09T05:17:53.924372795Z"
+generated: "2026-09-11T07:34:50.528979831Z"

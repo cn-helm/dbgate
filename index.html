@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DbGate Helm Chart</title>
+<style>
+:root { color-scheme: light dark; }
+body { margin: 0 auto; max-width: 1040px; padding: 24px;
+       font: 16px/1.65 system-ui, sans-serif; overflow-wrap: anywhere; }
+a { color: light-dark(#075bb5, #8dc6ff); }
+nav { display: flex; flex-wrap: wrap; gap: 20px; border-bottom: 1px solid #8886;
+      padding-bottom: 16px; margin-bottom: 24px; }
+h1, h2, h3 { line-height: 1.25; margin-top: 1.6em; }
+pre { overflow-x: auto; padding: 16px; background: #8882; border-radius: 6px; }
+code { font-family: ui-monospace, monospace; font-size: .9em; }
+table { display: block; overflow-x: auto; border-collapse: collapse; }
+th, td { border: 1px solid #8886; padding: 8px 12px; text-align: left; }
+@media (max-width: 600px) { body { padding: 16px; } }
+</style>
+</head>
+<body>
+<nav aria-label="Documentation">
+<a href="index.html" lang="en">English</a>
+<a href="readme.zh.html" lang="zh-CN">简体中文</a>
+<a href="index.yaml">Helm index</a>
+<a href="README.md">Markdown</a>
+</nav>
+<main><h1 id="dbgate-helm-chart">DbGate Helm Chart</h1>
+<p><a href="readme.zh.html">简体中文</a></p>
+<p>This chart deploys DbGate as a single-replica Kubernetes workload. It is suitable
+for installation from Rancher Apps after the chart directory is published to a
+Helm repository, or directly with Helm.</p>
+<h2 id="install">Install</h2>
+<p>Provide the administrator password at install time; do not commit it to
+<code>values.yaml</code>.</p>
+<h3 id="online-installation">Online installation</h3>
+<p>Add the public Helm repository and install the chart:</p>
+<pre><code class="language-bash">helm repo add dbgate https://cn-helm.github.io/dbgate
+helm repo update
+helm upgrade --install dbgate dbgate/dbgate \
+  --namespace tools --create-namespace \
+  --set auth.adminPassword='replace-with-a-strong-password'
+</code></pre>
+<h3 id="local-installation">Local installation</h3>
+<p>Run from the chart directory:</p>
+<pre><code class="language-bash">helm upgrade --install dbgate . \
+  --namespace tools --create-namespace \
+  --set auth.adminPassword='replace-with-a-strong-password'
+</code></pre>
+<p>To use a local kubeconfig and a specific Ingress hostname, add these options
+to the local installation command (adjust the kubeconfig path):</p>
+<pre><code class="language-bash">helm --kubeconfig ./rancher-local.yaml upgrade --install dbgate . \
+  --namespace tools --create-namespace \
+  --set auth.adminPassword='replace-with-a-strong-password' \
+  --set ingress.enabled=true \
+  --set 'ingress.hosts[0].host=dbgate.localhost' \
+  --set 'ingress.hosts[0].paths[0].path=/dbgate' \
+  --set 'ingress.hosts[0].paths[0].pathType=Prefix'
+</code></pre>
+<p>For an existing Secret, set <code>auth.existingSecret</code>. It must contain both
+<code>LOGIN_PASSWORD_admin</code> and <code>LOGIN_PERMISSIONS_admin</code> keys.</p>
+<h2 id="publish-as-a-rancher-http-repository">Publish as a Rancher HTTP Repository</h2>
+<p>Pushing this Chart to the <code>main</code> branch runs the GitHub Actions workflow that
+packages it, generates <code>index.yaml</code>, and publishes both to <code>gh-pages</code>. In the
+GitHub repository settings, enable <strong>Pages</strong> and select the <code>gh-pages</code> branch
+as its source. After the first successful workflow, add this URL in Rancher
+under <strong>Apps &gt; Repositories</strong> with type <strong>HTTP</strong>:</p>
+<pre><code class="language-text">https://cn-helm.github.io/dbgate
+</code></pre>
+<p>Do not append <code>Chart.yaml</code> or <code>index.yaml</code>: Rancher resolves <code>index.yaml</code> from
+the repository root. It will then show the <code>dbgate</code> Chart in <strong>Apps &gt; Charts</strong>.
+Enter <code>auth.adminPassword</code> in the Rancher values form. Bump <code>Chart.yaml</code>'s
+<code>version</code> for every Chart release so Helm and Rancher detect the update.</p>
+<p>The workflow also renders this README as the English homepage and
+<code>readme.zh.md</code> as the Chinese page, with language navigation. Documentation
+changes trigger publication too. The site retains <code>index.yaml</code> and existing
+chart archives, so the same URL serves both documentation and Helm clients.</p>
+<ul>
+<li>English: https://cn-helm.github.io/dbgate/</li>
+<li>简体中文: https://cn-helm.github.io/dbgate/readme.zh.html</li>
+</ul>
+<h2 id="rancher-service-proxy">Rancher Service Proxy</h2>
+<p>The Service follows the same structure as LibreDB Studio: it exposes HTTP port
+<code>80</code> and forwards it to DbGate's container port <code>3000</code>. With a <code>dbgate</code> release
+in the <code>tools</code> namespace, Rancher exposes:</p>
+<pre><code class="language-text">https://localhost/api/v1/namespaces/tools/services/http:dbgate:80/proxy/
+</code></pre>
+<p>DbGate login uses bearer authentication after the initial request, which does
+not work reliably through Rancher's authenticated Service Proxy. Use the
+default Ingress endpoint below instead.</p>
+<h2 id="rancher-https-subpath">Rancher HTTPS subpath</h2>
+<p>After Rancher is moved to host port <code>8443</code> and ingress-nginx owns host port
+<code>443</code>, the default Chart values serve DbGate from the shared HTTPS endpoint:</p>
+<pre><code class="language-bash">helm upgrade --install dbgate . \
+  --namespace tools --create-namespace \
+  --set auth.adminPassword='replace-with-a-strong-password'
+</code></pre>
+<p>Open <code>https://&lt;rancher-host-or-lan-ip&gt;/dbgate/</code> (including the trailing slash).
+The default values intentionally omit <code>spec.rules[].host</code>, so the Ingress accepts
+<code>localhost</code>, a LAN IP, or a DNS name. It sets <code>WEB_ROOT=/dbgate</code>, so DbGate
+keeps its resources and login requests below the Ingress prefix. Configure a
+trusted TLS certificate for the hostname or IP you use to remove the browser
+certificate warning.</p>
+<h2 id="persistence">Persistence</h2>
+<p>Set <code>persistence.enabled=true</code> to retain DbGate's local data under
+<code>/root/.dbgate</code>. Make sure the target cluster has a default StorageClass, or set
+<code>persistence.storageClass</code> explicitly.</p>
+<h2 id="chart-012-rbac-storage">Chart 0.1.2: RBAC storage</h2>
+<p>Version 0.1.2 adds environment-variable configuration for PostgreSQL, MySQL and
+SQLite RBAC storage. <code>rbac.engine=env</code> is the default and preserves the existing
+environment-based permissions. The chart version does not upgrade the application
+code: choose an explicit <code>image.tag</code> whose image includes the RBAC storage
+implementation before enabling a database engine. <code>appVersion</code> alone is not a
+feature check, and <code>latest</code> does not guarantee that RBAC support is present.</p>
+<p>This is the storage-layer integration. The application management UI and complete
+endpoint authorization audit remain pending; table/file rule storage is not yet a
+complete fine-grained security boundary. Dynamic RBAC currently rejects MCP.</p>
+<table>
+<thead>
+<tr>
+<th>Value</th>
+<th>Default</th>
+<th>Application setting / purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>auth.provider</code></td>
+<td><code>logins</code></td>
+<td><code>AUTH_PROVIDER</code>; supports <code>logins</code>, <code>oauth</code>, <code>ad</code></td>
+</tr>
+<tr>
+<td><code>rbac.engine</code></td>
+<td><code>env</code></td>
+<td><code>RBAC_STORAGE_ENGINE</code>: <code>env</code>, <code>postgres</code>, <code>mysql</code>, <code>sqlite</code></td>
+</tr>
+<tr>
+<td><code>rbac.existingSecret</code></td>
+<td>empty</td>
+<td>Secret holding the RBAC database password and/or JWT signing secret</td>
+</tr>
+<tr>
+<td><code>rbac.bootstrap.provider</code></td>
+<td>empty</td>
+<td><code>RBAC_BOOTSTRAP_PROVIDER</code>; defaults to <code>auth.provider</code></td>
+</tr>
+<tr>
+<td><code>rbac.bootstrap.login</code></td>
+<td><code>admin</code></td>
+<td><code>RBAC_BOOTSTRAP_LOGIN</code>; first superadmin identity</td>
+</tr>
+<tr>
+<td><code>rbac.database.server</code></td>
+<td>empty</td>
+<td><code>RBAC_STORAGE_SERVER</code>; required for PG/MySQL</td>
+</tr>
+<tr>
+<td><code>rbac.database.port</code></td>
+<td><code>0</code></td>
+<td><code>RBAC_STORAGE_PORT</code>; 0 selects 5432 for PG or 3306 for MySQL</td>
+</tr>
+<tr>
+<td><code>rbac.database.name</code></td>
+<td><code>dbgate_rbac</code></td>
+<td><code>RBAC_STORAGE_DATABASE</code>; database must already exist</td>
+</tr>
+<tr>
+<td><code>rbac.database.user</code></td>
+<td><code>dbgate_rbac</code></td>
+<td><code>RBAC_STORAGE_USER</code></td>
+</tr>
+<tr>
+<td><code>rbac.database.ssl</code></td>
+<td><code>false</code></td>
+<td><code>RBAC_STORAGE_SSL</code>; true enables verified TLS</td>
+</tr>
+<tr>
+<td><code>rbac.sqlite.file</code></td>
+<td><code>/root/.dbgate/rbac.sqlite</code></td>
+<td><code>RBAC_STORAGE_FILE</code>; directly under the data-volume mount</td>
+</tr>
+</tbody>
+</table>
+<h3 id="postgresql-and-mysql">PostgreSQL and MySQL</h3>
+<p>Create the database and a user able to initialize/migrate the <code>rbac_</code> tables.
+Provision these Secrets in the release namespace through your secret-management
+workflow; the names below are examples:</p>
+<table>
+<thead>
+<tr>
+<th>Secret</th>
+<th>Required keys</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>dbgate-auth</code> (logins)</td>
+<td><code>LOGIN_PASSWORD_admin</code>, <code>LOGIN_PERMISSIONS_admin</code> (<code>*</code> for legacy compatibility)</td>
+</tr>
+<tr>
+<td><code>dbgate-rbac</code> (PG/MySQL)</td>
+<td><code>RBAC_STORAGE_PASSWORD</code>, <code>RBAC_TOKEN_SECRET</code></td>
+</tr>
+</tbody>
+</table>
+<p><code>RBAC_TOKEN_SECRET</code> must be randomly generated, at least 32 characters long, and
+identical across replicas. The chart uses explicit <code>secretKeyRef</code> entries for the
+database password and signing secret; neither is supplied through a plain value.
+Helm cannot verify the contents of existing Secrets while rendering offline;
+Kubernetes/application startup validates the referenced keys and configuration.</p>
+<p>Example <code>rbac-values.yaml</code> (replace the image tag and server):</p>
+<pre><code class="language-yaml">image:
+  tag: &quot;&lt;rbac-enabled-image-tag&gt;&quot;
+auth:
+  provider: logins
+  existingSecret: dbgate-auth
+rbac:
+  engine: postgres
+  existingSecret: dbgate-rbac
+  database:
+    server: postgres.database.svc.cluster.local
+    name: dbgate_rbac
+    user: dbgate_rbac
+    ssl: true
+  bootstrap:
+    login: admin
+</code></pre>
+<p>For MySQL, set <code>rbac.engine=mysql</code> and change <code>rbac.database.server</code>; port 0 selects
+3306 automatically. Configure TLS to match the actual database deployment.</p>
+<pre><code class="language-bash">helm upgrade --install dbgate . \
+  --namespace tools --create-namespace \
+  --values rbac-values.yaml
+</code></pre>
+<p>Database connection/migration failures prevent the application from starting;
+they never trigger a fallback to SQLite. Centralized RBAC supports shared policy
+across instances, but scaling the application still requires reviewing its local
+data, session behavior and PVC access mode. The chart defaults to one replica;
+a shared <code>ReadWriteOnce</code> PVC does not provide multi-node shared storage.</p>
+<h3 id="sqlite">SQLite</h3>
+<pre><code class="language-yaml">image:
+  tag: &quot;&lt;rbac-enabled-image-tag&gt;&quot;
+replicaCount: 1
+auth:
+  existingSecret: dbgate-auth
+rbac:
+  engine: sqlite
+  sqlite:
+    file: /root/.dbgate/rbac.sqlite
+persistence:
+  enabled: true
+</code></pre>
+<p>The file is retained on the existing PVC. The chart requires a file directly under
+<code>/root/.dbgate</code>, persistence enabled and exactly one replica. It renders deployment
+strategy <code>Recreate</code> to avoid overlapping old/new pods during an upgrade; expect a
+brief interruption. Choose a StorageClass backed by local/block storage, not
+SMB/NFS. The chart cannot determine the backing filesystem of an external
+StorageClass. The application enables WAL, foreign keys and a 5-second lock wait.</p>
+<p>Optionally set <code>rbac.existingSecret</code> to a Secret containing <code>RBAC_TOKEN_SECRET</code>
+to retain JWT validity across restarts. SQLite does not need a database-password
+key. Without a persistent signing secret, users sign in again after restart.</p>
+<h3 id="authentication-bootstrap-and-upgrades">Authentication, bootstrap and upgrades</h3>
+<p>Authentication remains separate from stored authorization. Generated auth Secrets
+configure the <code>admin</code> login; use <code>auth.existingSecret</code> for other accounts or IdPs.
+With <code>auth.provider=oauth</code>, the authentication Secret should contain <code>OAUTH_AUTH</code>,
+<code>OAUTH_TOKEN</code>, <code>OAUTH_CLIENT_ID</code>, <code>OAUTH_CLIENT_SECRET</code>, <code>OAUTH_SCOPE</code> and a stable
+unique <code>OAUTH_LOGIN_FIELD</code>. Set <code>rbac.bootstrap.login</code> to the actual external login
+(for example, <code>admin@example.com</code>); leave <code>rbac.bootstrap.provider</code> empty to inherit
+<code>oauth</code>. AD similarly requires its existing <code>AD_*</code> configuration in that Secret.
+The chart requires an existing authentication Secret for OAuth/AD.</p>
+<p>Bootstrap only applies to an empty RBAC store and does not create an upstream IdP
+account or reset existing privileges. After initialization, set
+<code>rbac.bootstrap.login=""</code> to omit both bootstrap variables. An explicit bootstrap
+provider must match <code>auth.provider</code>.</p>
+<p>In dynamic mode, permissions come from RBAC storage; <code>LOGIN_PERMISSIONS_*</code> and
+<code>PERMISSIONS</code> are ignored for authorization. Do not put <code>STORAGE_DATABASE</code> or
+<code>SKIP_ALL_AUTH</code> into authentication Secrets: the application rejects those
+combinations. Sign in again after switching from <code>env</code> to dynamic mode.
+Secret updates require a pod restart to refresh environment variables; rotating
+the JWT secret invalidates existing tokens. Back up the RBAC database before
+migrations and preserve it during chart rollback. Changing engines does not
+copy/migrate identities and permissions automatically.</p>
+<h3 id="validation-and-publishing">Validation and publishing</h3>
+<pre><code class="language-bash">helm lint . --strict --set auth.existingSecret=lint-auth
+node --test tests/rbac.test.cjs
+</code></pre>
+<p>The template tests cover all four engines, Secret references, OAuth bootstrap,
+custom ports, and invalid SQLite/storage combinations without accessing a cluster
+or database. The publishing workflow runs these checks before packaging. Local
+<code>values2.yaml</code> and tests are excluded from the packaged chart. Publishing still
+occurs through the existing <code>main</code> -&gt; <code>gh-pages</code> workflow; local version changes
+alone do not publish a release.</p></main>
+</body>
+</html>
